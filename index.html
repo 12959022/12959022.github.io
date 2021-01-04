@@ -9,8 +9,10 @@
         <script src="chartjs.js"></script>
     </head>
     <body>
-        <div id="graphContainer" width="300" height="300">
-            <canvas id="myChart" width="300" height="300"></canvas>
+        <div>
+            <div id="graphContainer" width="400" height="400">
+                <canvas id="myChart"></canvas>
+            </div>
         </div>
         <label for="spokes">Number of spokes:</label>
         <select id="spokes" name="spokes" onchange="spokesChange()">
@@ -34,23 +36,28 @@
                 }
                 var data2 = [];
                 for(var i = 0; i < spokes; i++) {
-                    data2.push(2);
+                    height = (Math.abs((spokes/2-i)/(spokes/2))-0.5)*50;
+                    data2.push(height);
                 }
                 
                 var labels = [];
                 for(var i = 0; i < spokes; i++) {
                     labels.push("Spoke " + i);
                 }
-                var backGround1 = [];
+                var displacementData = [];
                 for(var i = 0; i < spokes; i++) {
                     const displacement = Math.abs((spokes/2-i)/(spokes/2))-0.5;
-                    // console.log(displacement);
-                    backGround1.push(rgbaString(displacement));
+                    displacementData.push(displacement);
                 }
+                var backGround1 = [];
+                for(var i = 0; i < spokes; i++) {
+                    backGround1.push(rgbaString(displacementData[i]));
+                }
+                console.log(data2);
                 var borderWidth = [];
                 for(var i = 0; i < spokes; i++) {
                     const height = (Math.abs((spokes/2-i)/(spokes/2))-0.5)*50;
-                    borderWidth.push(height);
+                    borderWidth.push(data2[i]);
                 }
 
                 var borderColor = [];
@@ -59,11 +66,11 @@
                     borderColor.push(rgbaStringHeight(height))*50;
                 }
 
-
                 console.log(data);
                 console.log(backGround1);
                 window.myChart = new Chart(ctx, {
                     type: 'doughnut',
+                    maintainAspectRatio: false,
                     data: {
                         labels: labels,
                         datasets: [{
@@ -77,31 +84,18 @@
                             // borderAlign: 'inner',
                             
                         }, 
-                        // {
-                        //     label: 'Displacement',
-                        //     data: data2,
-                        //     type: 'doughnut',
-                        //     backgroundColor: [
-                        //         'rgba(255, 99, 132, 0.2)',
-                        //         'rgba(54, 162, 235, 0.2)',
-                        //         // 'rgba(255, 206, 86, 0.2)',
-                        //         // 'rgba(75, 192, 192, 0.2)',
-                        //         // 'rgba(153, 102, 255, 0.2)',
-                        //         // 'rgba(255, 159, 64, 0.2)'
-                        //     ],
-                        //     // borderColor: [
-                        //     //     'rgba(255, 99, 132, 1)',
-                        //     //     'rgba(54, 162, 235, 1)',
-                        //     //     'rgba(255, 206, 86, 1)',
-                        //     //     'rgba(75, 192, 192, 1)',
-                        //     //     'rgba(153, 102, 255, 1)',
-                        //     //     'rgba(255, 159, 64, 1)'
-                        //     // ],
-                        //     borderWidth: [
-                                
-                        //     ]
+                        {
+                            label: 'Height',
+                            data: data2,
+                            hidden: 'true',
                             
-                        // }
+                        },
+                        {
+                            label: 'Displacement',
+                            data: displacementData,
+                            hidden: 'true',
+                            
+                        }
                     ]
                     },
                     options: {
@@ -110,17 +104,32 @@
                             display: false
                         },
                         cutoutPercentage: 70,
-                        // tooltips: {
-                        //     callbacks: {
-                        //     label: function(tooltipItem) {
-                        //         return tooltipItem.yLabel;
-                        // }
-                        // scale: {
-                        //     display: false
-                        // }
                         animation: {
                             duration: 0
-                        }
+                        },
+                        tooltips: {
+                            callbacks: {
+                                label: function(tooltipItem, data) {
+                                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                    label += ': ';
+                                
+                                    label += data.datasets[2].data[tooltipItem.index];
+
+                                    var multistringText = [label];
+                                    var label2 = 'Height' || '';
+                                    label2 += ': ';
+                                    label2 += data.datasets[1].data[tooltipItem.index];
+
+                                    multistringText.push(label2);
+                                    return multistringText;
+                                }
+                            },
+                            custom: function(tooltip) {
+                                if (!tooltip) return;
+                                // disable displaying the color box;
+                                tooltip.displayColors = false;
+                            },
+                        },
                     }
                 });
                 
@@ -185,13 +194,7 @@
 
             document.getElementById('rotation').onchange = function() {
                 console.log(this.value/180 * Math.PI)
-                myChart.options = {
-                    rotation: (this.value/180 * Math.PI),
-                    cutoutPercentage: 70,
-                    legend: {
-                        display: false
-                    },
-                }
+                myChart.options.rotation = this.value/180 * Math.PI; 
                 myChart.update();
             }
 
@@ -200,41 +203,13 @@
                 updateData(myChart);
             }
 
-            
-
             createChart(16);
             console.log(myChart);
             console.log(Chart);
 
-            function drawSegmentValues(myPieChart)
-            {
-                console.log(myPieChart);
-                for(var i=0; i<myPieChart.data.datasets[0].data.length; i++) 
-                {
-                    // Default properties for text (size is scaled)
-                    ctx.fillStyle="white";
-                    var textSize = myPieChart.width/10;
-                    ctx.font= textSize+"px Verdana";
-
-                    // Get needed variables
-                    var value = myPieChart.data.datasets[0].data[i].value;
-                    var startAngle = myPieChart.data.datasets[0].data[i].startAngle;
-                    var endAngle = myPieChart.data.datasets[0].data[i].endAngle;
-                    var middleAngle = startAngle + ((endAngle - startAngle)/2);
-
-                    // Compute text location
-                    var posX = (100/2) * Math.cos(middleAngle) + 200;
-                    var posY = (100/2) * Math.sin(middleAngle) + 200;
-
-                    // Text offside to middle of text
-                    var w_offset = ctx.measureText(value).width/2;
-                    var h_offset = textSize/4;
-
-                    ctx.fillText(value, posX - w_offset, posY + h_offset);
-                }
-            }
-            drawSegmentValues(myChart);
-    
+            // myChart.canvas.parentNode.style.height = '600px';
+            // myChart.canvas.parentNode.style.width = '600px';
+   
 
         </script>
     </body>
