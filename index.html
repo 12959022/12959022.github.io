@@ -12,8 +12,8 @@
             .triangle-up {
                 width: 0;
                 height: 0;
-                border-left: 15px solid transparent;
-                border-right: 15px solid transparent;
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
                 border-bottom: 30px solid #555;
                 margin: auto;
             }
@@ -45,7 +45,8 @@
         <button id="allign">Align valve</button>
         <img id ="dot" src="dot.svg" style="display: none;"></img>
         <script>
-
+            
+            var valveCorrection = 90;
             function createChart(spokes=16) {
                 window.ctx = document.getElementById('myChart').getContext('2d');
                 var data = [];
@@ -240,7 +241,7 @@
             }
 
             document.getElementById('allign').onclick = function() {
-                window.valvePosition = (document.getElementById('rotation').value + 90)/180 * Math.PI;
+                window.valveCorrection = - parseInt(document.getElementById('rotation').value) + 90;
                 myChart.update();
             }
 
@@ -262,34 +263,51 @@
 
             Chart.defaults.pieWithExtraStuff = Chart.defaults.doughnut;                // the name of the new chart type is "pieWithExtraStuff"
 
-            Chart.controllers.pieWithExtraStuff = Chart.controllers.doughnut.extend({  // creating the controller for our "pieWithExtraStuff" chart by extending from the default pie chart controller
-                draw: function(ease) {                                              // override the draw method to add the extra stuff
-                    Chart.controllers.doughnut.prototype.draw.call(this, ease);            // call the parent draw method (inheritance in javascript, whatcha gonna do?)
+            Chart.controllers.pieWithExtraStuff = Chart.controllers.doughnut.extend({
+                draw: function(ease) {
+                    var ctx           = this.chart.ctx;
+                    var easingDecimal = ease || 1;
+                    var arcs          = this.getMeta().data;
+                    Chart.helpers.each(arcs, function(arc, i) {
+                        arc.transition(easingDecimal).draw();
 
-                    // var chart = this.chart;
-                    // var ctx = this.chart.ctx;   
-                    // var meta = this.getMeta();
-                    // console.log(chart);                                      // get the context
-                    
-                    // ctx.beginPath();
-                    // // ctx.arc(100, 100, 50, 0, 1.1);
-                    // // ctx.arc(100, 100, 40, 1.1, 0, true);
-                    // ctx.arc(arc.x, arc.y, arc.outerRadius, arc.startAngle, arc.endAngle);
-                    // ctx.arc(arc.x, arc.y, arc.innerRadius, arc.endAngle, arc.startAngle, true);
-                    // ctx.closePath();
-                    // ctx.filStyle = 'red';
-                    // ctx.fill();
-                    // console.log(ctx);
-                    // ctx.fillStyle = "red";
-                    // ctx.fill();        // draw it
-                    
-                },
-                // initialize: function(chart, datasetIndex) {                         // override initialize too to preload the image, the image doesn't need to be outside as it is only used by this chart
-                //     Chart.controllers.doughnut.prototype.initialize.call(this, chart, datasetIndex);
+                        var pArc   = arcs[i === 0 ? arcs.length - 1 : i - 1];
+                        var pColor = pArc._view.backgroundColor;
 
-                //                                 // save it as a property so it can be accessed from the draw method
-                //     chart.render();                                                 // and force re-render to include it
-                // },
+                        var vm         = arc._view;
+                        var radius     = (vm.outerRadius + vm.innerRadius) / 2;
+                        var thickness  = vm.outerRadius - vm.innerRadius;
+                        var startAngle = Math.PI - vm.startAngle - Math.PI / 2;
+                        var angle      = Math.PI - vm.endAngle - Math.PI / 2;
+
+                        ctx.save();
+                        // ctx.translate(vm.x, vm.y);
+
+                        console.log(valveCorrection);
+                        window.valvePosition = (parseInt(document.getElementById('rotation').value) + valveCorrection)/180 * Math.PI;
+                        console.log(valvePosition);
+
+                        ctx.beginPath();
+                        ctx.arc(vm.x, vm.y, vm.outerRadius - 6, valvePosition-0.02, valvePosition+0.02);
+                        ctx.arc(vm.x, vm.y, vm.outerRadius, valvePosition+0.02, valvePosition-0.02, true);
+                        
+
+                        ctx.fill();
+
+
+                        // ctx.fillStyle = i === 0 ? vm.backgroundColor : pColor;
+                        // ctx.beginPath();
+                        // ctx.arc(radius * Math.sin(startAngle), radius * Math.cos(startAngle), thickness, 0, 2 * Math.PI);
+                        // ctx.fill();
+
+                        // ctx.fillStyle = vm.backgroundColor;
+                        // ctx.beginPath();
+                        // ctx.arc(radius * Math.sin(angle), radius * Math.cos(angle), thickness, 0, 2 * Math.PI);
+                        // ctx.fill();
+
+                        ctx.restore();
+                    });
+                }
             });
 
             createChart(16);
