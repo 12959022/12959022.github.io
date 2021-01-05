@@ -3,49 +3,60 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Chart</title>
+        <title>Truing tool</title>
         <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js" integrity="sha512-hZf9Qhp3rlDJBvAKvmiG+goaaKRZA6LKUO35oK6EsM0/kjPK32Yw7URqrq3Q+Nvbbt8Usss+IekL7CRn83dYmw==" crossorigin="anonymous"></script> -->
         <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.0-beta.7/chart.js" integrity="sha512-A7BgARBKhOC/Ohh/MLEmmz2d8Qk8p3T1agn8eGOPMWjw+vbHq7yKLzarSaZx50HXERioFjfVCePWbIbxa5Ln2g==" crossorigin="anonymous"></script> -->
         <script src="chartjs.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.js" integrity="sha512-o2vKsxnxl66o5bM3x+Z4jvweDAM7DMShyXHQ5C8bWsm2aOJKmJl1V5JtRjoZpHJfdas3VPpzXngtikzo7u4rcw==" crossorigin="anonymous"></script>
-        <style>
-            .triangle-up {
-                width: 0;
-                height: 0;
-                border-left: 10px solid transparent;
-                border-right: 10px solid transparent;
-                border-bottom: 30px solid #555;
-                margin: auto;
-            }
-        </style>
+        <link rel="stylesheet" href="style.css">
+           
     </head>
     <body>
+        <!-- <div id = "titleBar">
+            Truing indicator
+        </div> -->
         <div style="text-align: center;">
             <div id="graphContainer" width="400" height="400">
                 <canvas id="myChart"></canvas>
             </div>
             <div>
                 <div class="triangle-up"></div>
-                <div style="margin: auto;">Measuring point</div>
+                <div style="margin: auto;"></div>Measuring point</div>
             </div>  
         </div>
-        <label for="spokes">Number of spokes:</label>
-        <select id="spokes" name="spokes" onchange="spokesChange()">
-            <option value="16">16</option>
-            <option value="20">20</option>
-            <option value="24">24</option>
-            <option value="28">28</option>
-            <option value="32">32</option>
-        </select>
-        <br>
-        <label for="rotation">Rotation:</label>
-        <input id="rotation" type="number" min="0" step="10" max="360" value="0">
-        <br>
-        <button id="update" style="display: none;">Update Data</button>
-        <button id="allign">Align valve</button>
+        <hr>
+        <div id="detailsContainer">
+            <p3>Width (max deviation)</p3>
+            <br>
+            <p id="maxWidth">N/A</p>
+           
+            <p3>Height (max deviation)</p3>
+            <br>
+            <p id="maxHeight">N/A</p>
+    
+            <label for="spokes">Number of spokes:</label>
+            <br>
+            <select id="spokes" name="spokes" onchange="spokesChange()">
+                <option value="16">16</option>
+                <option value="20">20</option>
+                <option value="24">24</option>
+                <option value="28">28</option>
+                <option value="32">32</option>
+            </select>
+            <br>
+            <label for="rotation">Rotation:</label>
+            <br>
+            <input id="rotation" type="number" min="0" step="10" max="360" value="0">
+            <br>
+            <button id="update" style="display: none;">Update Data</button>
+            <button id="allign">Align valve</button>
+        </div>
         <img id ="dot" src="dot.svg" style="display: none;"></img>
         <script>
             
+            
+           
+
             var valveCorrection = 90;
             function createChart(spokes=16) {
                 window.ctx = document.getElementById('myChart').getContext('2d');
@@ -53,10 +64,10 @@
                 for(var i = 0; i < spokes; i++) {
                     data.push(1);
                 }
-                var data2 = [];
+                window.heightData = [];
                 for(var i = 0; i < spokes; i++) {
                     height = (Math.abs((spokes/2-i)/(spokes/2))-0.5)*50;
-                    data2.push(height);
+                    heightData.push(height);
                 }
                 var missingData = [];
                 for(var i = 0; i < spokes; i++) {
@@ -68,26 +79,25 @@
                     }
                     missingData.push(randomValue);
                 }
-                // console.log(missingData);
                 
                 var labels = [];
                 for(var i = 0; i < spokes; i++) {
                     labels.push("Spoke " + i);
                 }
-                var displacementData = [];
+                window.displacementData = [];
                 for(var i = 0; i < spokes; i++) {
                     const displacement = Math.abs((spokes/2-i)/(spokes/2))-0.5;
                     displacementData.push(displacement);
                 }
+                
                 var backGround1 = [];
                 for(var i = 0; i < spokes; i++) {
                     backGround1.push(rgbaString(displacementData[i], missingData[i]));
                 }
-                console.log(data2);
                 var borderWidth = [];
                 for(var i = 0; i < spokes; i++) {
                     const height = (Math.abs((spokes/2-i)/(spokes/2))-0.5)*50;
-                    borderWidth.push(data2[i]);
+                    borderWidth.push(heightData[i]);
                 }
 
                 var borderColor = [];
@@ -96,8 +106,6 @@
                     borderColor.push(rgbaStringHeight(height))*50;
                 }
 
-                console.log(data);
-                console.log(backGround1);
                 window.myChart = new Chart(ctx, {
                     type: 'pieWithExtraStuff',
                     maintainAspectRatio: false,
@@ -109,15 +117,10 @@
                             backgroundColor: backGround1,
                             borderColor: borderColor,
                             borderWidth: borderWidth,
-                            
-                            // borderDashOffset: borderWidth,
-                            borderStyle:'dash',//has no effect
-                            // borderAlign: 'inner',
-                            
                         }, 
                         {
                             label: 'Height',
-                            data: data2,
+                            data: heightData,
                             hidden: 'true',
                             
                         },
@@ -194,9 +197,8 @@
             }
 
             var spokesCounter = document.getElementById('spokes')
-
             spokesCounter.onchange = function() {
-                // console.log("Changed spokes");
+
                 myChart.destroy();
                 createChart(this.value);
             }
@@ -215,7 +217,6 @@
                     g = g - correction;
                     r = r - correction;
                 }
-                console.log(missing);
                 var a = 1 - missing;
                 
                 return rgba = `rgb(${r}, ${g}, ${b}, ${a})`;
@@ -225,19 +226,20 @@
                 var r = 10;
                 var g = 10;
                 var b = 10;
-                // if(displacement > 0) {
-                //     r = r + displacement * 200;
-                // } else {
-                //     b = b + displacement * 200;
-                // }
                 var a = 0.1 + Math.abs(height);
                 return rgba = `rgb(${r}, ${g}, ${b}, ${a})`;
             }
 
             document.getElementById('rotation').onchange = function() {
-                console.log(this.value/180 * Math.PI)
                 myChart.options.rotation = this.value/180 * Math.PI; 
                 myChart.update();
+
+            
+                maxWidth = Math.max.apply(null, displacementData);
+                document.getElementById('maxWidth').innerHTML = maxWidth;
+
+                maxHeight = Math.max.apply(null, heightData)/100;
+                document.getElementById('maxHeight').innerHTML = maxHeight;
             }
 
             document.getElementById('allign').onclick = function() {
@@ -249,17 +251,7 @@
                 console.log('update');
                 updateData(myChart);
             }
-
-            
-            console.log(myChart);
-            console.log(Chart);
-
-            
-
-            // myChart.canvas.parentNode.style.height = '600px';
-            // myChart.canvas.parentNode.style.width = '600px';
    
-            
 
             Chart.defaults.pieWithExtraStuff = Chart.defaults.doughnut;                // the name of the new chart type is "pieWithExtraStuff"
 
@@ -281,36 +273,21 @@
                         var angle      = Math.PI - vm.endAngle - Math.PI / 2;
 
                         ctx.save();
-                        // ctx.translate(vm.x, vm.y);
 
-                        console.log(valveCorrection);
                         window.valvePosition = (parseInt(document.getElementById('rotation').value) + valveCorrection)/180 * Math.PI;
-                        console.log(valvePosition);
 
                         ctx.beginPath();
                         ctx.arc(vm.x, vm.y, vm.outerRadius - 6, valvePosition-0.02, valvePosition+0.02);
                         ctx.arc(vm.x, vm.y, vm.outerRadius, valvePosition+0.02, valvePosition-0.02, true);
-                        
 
                         ctx.fill();
-
-
-                        // ctx.fillStyle = i === 0 ? vm.backgroundColor : pColor;
-                        // ctx.beginPath();
-                        // ctx.arc(radius * Math.sin(startAngle), radius * Math.cos(startAngle), thickness, 0, 2 * Math.PI);
-                        // ctx.fill();
-
-                        // ctx.fillStyle = vm.backgroundColor;
-                        // ctx.beginPath();
-                        // ctx.arc(radius * Math.sin(angle), radius * Math.cos(angle), thickness, 0, 2 * Math.PI);
-                        // ctx.fill();
-
                         ctx.restore();
                     });
                 }
             });
 
             createChart(16);
+            myChart.update();
             
 
         </script>
