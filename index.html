@@ -7,16 +7,32 @@
         <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js" integrity="sha512-hZf9Qhp3rlDJBvAKvmiG+goaaKRZA6LKUO35oK6EsM0/kjPK32Yw7URqrq3Q+Nvbbt8Usss+IekL7CRn83dYmw==" crossorigin="anonymous"></script> -->
         <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.0-beta.7/chart.js" integrity="sha512-A7BgARBKhOC/Ohh/MLEmmz2d8Qk8p3T1agn8eGOPMWjw+vbHq7yKLzarSaZx50HXERioFjfVCePWbIbxa5Ln2g==" crossorigin="anonymous"></script> -->
         <script src="chartjs.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.js" integrity="sha512-o2vKsxnxl66o5bM3x+Z4jvweDAM7DMShyXHQ5C8bWsm2aOJKmJl1V5JtRjoZpHJfdas3VPpzXngtikzo7u4rcw==" crossorigin="anonymous"></script>
+        <style>
+            .triangle-up {
+                width: 0;
+                height: 0;
+                border-left: 15px solid transparent;
+                border-right: 15px solid transparent;
+                border-bottom: 30px solid #555;
+                margin: auto;
+            }
+        </style>
     </head>
     <body>
-        <div>
+        <div style="text-align: center;">
             <div id="graphContainer" width="400" height="400">
                 <canvas id="myChart"></canvas>
             </div>
+            <div>
+                <div class="triangle-up"></div>
+                <div style="margin: auto;">Measuring point</div>
+            </div>  
         </div>
         <label for="spokes">Number of spokes:</label>
         <select id="spokes" name="spokes" onchange="spokesChange()">
             <option value="16">16</option>
+            <option value="20">20</option>
             <option value="24">24</option>
             <option value="28">28</option>
             <option value="32">32</option>
@@ -25,10 +41,12 @@
         <label for="rotation">Rotation:</label>
         <input id="rotation" type="number" min="0" step="10" max="360" value="0">
         <br>
-        <button id="update">Update Data</button>
+        <button id="update" style="display: none;">Update Data</button>
+        <button id="allign">Align valve</button>
+        <img id ="dot" src="dot.svg" style="display: none;"></img>
         <script>
 
-            function createChart(spokes=24) {
+            function createChart(spokes=16) {
                 window.ctx = document.getElementById('myChart').getContext('2d');
                 var data = [];
                 for(var i = 0; i < spokes; i++) {
@@ -39,6 +57,17 @@
                     height = (Math.abs((spokes/2-i)/(spokes/2))-0.5)*50;
                     data2.push(height);
                 }
+                var missingData = [];
+                for(var i = 0; i < spokes; i++) {
+                    randomValue = Math.random();
+                    if(randomValue > 0.85) {
+                        randomValue = 0.5;
+                    } else {
+                        randomValue = 0;
+                    }
+                    missingData.push(randomValue);
+                }
+                // console.log(missingData);
                 
                 var labels = [];
                 for(var i = 0; i < spokes; i++) {
@@ -51,7 +80,7 @@
                 }
                 var backGround1 = [];
                 for(var i = 0; i < spokes; i++) {
-                    backGround1.push(rgbaString(displacementData[i]));
+                    backGround1.push(rgbaString(displacementData[i], missingData[i]));
                 }
                 console.log(data2);
                 var borderWidth = [];
@@ -69,7 +98,7 @@
                 console.log(data);
                 console.log(backGround1);
                 window.myChart = new Chart(ctx, {
-                    type: 'doughnut',
+                    type: 'pieWithExtraStuff',
                     maintainAspectRatio: false,
                     data: {
                         labels: labels,
@@ -79,6 +108,7 @@
                             backgroundColor: backGround1,
                             borderColor: borderColor,
                             borderWidth: borderWidth,
+                            
                             // borderDashOffset: borderWidth,
                             borderStyle:'dash',//has no effect
                             // borderAlign: 'inner',
@@ -100,6 +130,7 @@
                     },
                     options: {
                         rotation: 0,
+                        
                         legend: {
                             display: false
                         },
@@ -128,6 +159,9 @@
                                 if (!tooltip) return;
                                 // disable displaying the color box;
                                 tooltip.displayColors = false;
+                            },
+                            onComplete: function(animation) {
+                                alert('onAnimationComplete')
                             },
                         },
                     }
@@ -166,16 +200,23 @@
                 createChart(this.value);
             }
 
-            function rgbaString(displacement=0) {
-                var r = 50;
-                var g = 50;
-                var b = 50;
+            function rgbaString(displacement=0, missing=0) {
+                var r = 200;
+                var g = 200;
+                var b = 200;
+                var correction = displacement * 50;
                 if(displacement > 0) {
-                    r = r + displacement * 200;
+                    r = r + correction;
+                    g = g - correction;
+                    b = b - correction;
                 } else {
-                    b = b + displacement * 200;
+                    b = b + correction;
+                    g = g - correction;
+                    r = r - correction;
                 }
-                var a = 0.1 + Math.abs(displacement);
+                console.log(missing);
+                var a = 1 - missing;
+                
                 return rgba = `rgb(${r}, ${g}, ${b}, ${a})`;
             }
 
@@ -198,18 +239,61 @@
                 myChart.update();
             }
 
+            document.getElementById('allign').onclick = function() {
+                window.valvePosition = (document.getElementById('rotation').value + 90)/180 * Math.PI;
+                myChart.update();
+            }
+
             document.getElementById('update').onclick = function() {
                 console.log('update');
                 updateData(myChart);
             }
 
-            createChart(16);
+            
             console.log(myChart);
             console.log(Chart);
+
+            
 
             // myChart.canvas.parentNode.style.height = '600px';
             // myChart.canvas.parentNode.style.width = '600px';
    
+            
+
+            Chart.defaults.pieWithExtraStuff = Chart.defaults.doughnut;                // the name of the new chart type is "pieWithExtraStuff"
+
+            Chart.controllers.pieWithExtraStuff = Chart.controllers.doughnut.extend({  // creating the controller for our "pieWithExtraStuff" chart by extending from the default pie chart controller
+                draw: function(ease) {                                              // override the draw method to add the extra stuff
+                    Chart.controllers.doughnut.prototype.draw.call(this, ease);            // call the parent draw method (inheritance in javascript, whatcha gonna do?)
+
+                    // var chart = this.chart;
+                    // var ctx = this.chart.ctx;   
+                    // var meta = this.getMeta();
+                    // console.log(chart);                                      // get the context
+                    
+                    // ctx.beginPath();
+                    // // ctx.arc(100, 100, 50, 0, 1.1);
+                    // // ctx.arc(100, 100, 40, 1.1, 0, true);
+                    // ctx.arc(arc.x, arc.y, arc.outerRadius, arc.startAngle, arc.endAngle);
+                    // ctx.arc(arc.x, arc.y, arc.innerRadius, arc.endAngle, arc.startAngle, true);
+                    // ctx.closePath();
+                    // ctx.filStyle = 'red';
+                    // ctx.fill();
+                    // console.log(ctx);
+                    // ctx.fillStyle = "red";
+                    // ctx.fill();        // draw it
+                    
+                },
+                // initialize: function(chart, datasetIndex) {                         // override initialize too to preload the image, the image doesn't need to be outside as it is only used by this chart
+                //     Chart.controllers.doughnut.prototype.initialize.call(this, chart, datasetIndex);
+
+                //                                 // save it as a property so it can be accessed from the draw method
+                //     chart.render();                                                 // and force re-render to include it
+                // },
+            });
+
+            createChart(16);
+            
 
         </script>
     </body>

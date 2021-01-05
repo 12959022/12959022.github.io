@@ -4299,7 +4299,33 @@ var element_arc = core_element.extend({
 		};
 		var i;
 
-		ctx.save();
+        ctx.save();
+        
+        ctx.beginPath();
+        // ctx.rect(arc.x, arc.y, arc.y, arc.y   );
+        ctx.arc(arc.x, arc.y, arc.outerRadius, arc.startAngle, arc.endAngle);
+        ctx.arc(arc.x, arc.y, arc.innerRadius, arc.endAngle, arc.startAngle, true);
+        ctx.closePath(); 
+        var texture = document.getElementById("dot");
+        var pFill = ctx.createPattern(texture, "repeat");
+        // texture.setTransform(matrix.rotate(-45).scale(0.05));
+        
+
+        var patt = document.createElement('canvas');
+        patt.width = 5;
+        patt.height = 5;
+        // set the resized width and height
+        var bgCanvas = patt.getContext('2d');
+       
+        bgCanvas.fillRect(20, 20, 150, 100);
+
+        // pass the resized canvas to your createPattern
+        // drawBG(patt);
+
+        // var pFill = ctx.createPattern(patt, 'repeat');
+        ctx.fillStyle = pFill;
+        ctx.fill();
+        
 
 		ctx.fillStyle = vm.backgroundColor;
 		ctx.strokeStyle = vm.borderColor;
@@ -4338,6 +4364,7 @@ var element_arc = core_element.extend({
             ctx.fill();
         }
 
+        
         // edited by bart
 
 		// if (vm.borderWidth) {
